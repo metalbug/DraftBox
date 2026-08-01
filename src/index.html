@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DraftBox</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="atom-one-dark.min.css">
+  <script src="highlight.min.js"></script>
+  <script src="marked.min.js"></script>
+  <script src="turndown.js"></script>
+</head>
+
+<body>
+  <div class="titlebar">
+    <div class="titlebar-spacer"></div>
+    <div class="titlebar-toolbar">
+      <div class="search-container">
+        <input type="text" class="search-box" id="search-input" placeholder="搜索..."
+          data-i18n-placeholder="search_placeholder">
+        <span class="search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg></span>
+      </div>
+      <button class="btn-create-float" id="btn-trash" title="回收站" data-i18n-title="trash_title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg>
+      </button>
+      <button class="btn-create-float" id="btn-create-new" title="新建文章" data-i18n-title="new_post_title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+      <button id="theme-toggle" class="theme-toggle" title="切换主题" data-i18n-title="theme_toggle_title">
+        <span class="sun-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg></span>
+        <span class="moon-icon" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg></span>
+      </button>
+    </div>
+    <div class="titlebar-controls">
+      <div class="titlebar-button" id="titlebar-minimize" title="最小化" data-i18n-title="minimize_title">
+        <svg width="10" height="1" viewBox="0 0 10 1">
+          <rect width="10" height="1" fill="currentColor" />
+        </svg>
+      </div>
+      <div class="titlebar-button" id="titlebar-maximize" title="最大化" data-i18n-title="maximize_title">
+        <svg class="icon-maximize" width="10" height="10" viewBox="0 0 10 10">
+          <rect width="9" height="9" x="0.5" y="0.5" fill="none" stroke="currentColor" stroke-width="1" />
+        </svg>
+        <svg class="icon-restore" width="10" height="10" viewBox="0 0 10 10" style="display: none;">
+          <path d="M2.5,2.5 v-2 h7 v7 h-2" fill="none" stroke="currentColor" stroke-width="1" />
+          <rect width="7" height="7" x="0.5" y="2.5" fill="none" stroke="currentColor" stroke-width="1" />
+        </svg>
+      </div>
+      <div class="titlebar-button close" id="titlebar-close" title="关闭" data-i18n-title="close_title">
+        <svg width="10" height="10" viewBox="0 0 10 10">
+          <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" stroke-width="1.2" fill="none" />
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="collapsed">
+    <div class="sidebar-scroll" id="nav-list"></div>
+    <div class="tag-area">
+      <div id="tag-cloud-container" class="tag-cloud"></div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="main-scroll">
+      <div class="container" id="feed-container"></div>
+      <div style="height: 100px; text-align:center; color: #cbd5e1; margin-top: 20px;" data-i18n="end_mark">- End -
+      </div>
+    </div>
+  </main>
+
+  <div class="confirm-overlay" id="confirm-dialog">
+    <div class="confirm-box">
+      <p id="confirm-msg" style="font-size:1.2rem"></p>
+      <div class="confirm-actions">
+        <button class="btn-small danger" id="confirm-ok" data-i18n="yes">是</button>
+        <button class="btn-small" id="confirm-cancel" data-i18n="no">否</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="context-menu" class="context-menu">
+    <ul class="menu-items">
+      <li data-action="text"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <polyline points="4 7 4 4 20 4 20 7"></polyline>
+          <line x1="9" y1="20" x2="15" y2="20"></line>
+          <line x1="12" y1="4" x2="12" y2="20"></line>
+        </svg> <span data-i18n="add_text">添加文本</span></li>
+      <li data-action="h5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg> <span data-i18n="add_html">添加Html</span></li>
+      <li data-action="link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+        </svg> <span data-i18n="embed_link">嵌入外链</span></li>
+      <li data-action="upload"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg> <span data-i18n="upload_media">上传媒体</span></li>
+      <li data-action="map-folder"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg> <span data-i18n="map_folder">映射本地文件夹</span></li>
+      <li class="danger" data-action="delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg> <span data-i18n="move_to_trash">移入回收站</span></li>
+    </ul>
+  </div>
+
+  <!-- 外链输入弹窗 -->
+  <div class="link-input-popover" id="link-input-popover">
+    <input type="text" id="link-input" placeholder="输入链接或嵌入代码..." data-i18n-placeholder="link_input_placeholder">
+    <button class="btn-small" id="link-input-ok" data-i18n="ok">确定</button>
+  </div>
+
+  <!-- 回到顶部按钮 -->
+  <div class="progress-wrap" id="progress-wrap">
+    <svg class="progress-circle svg-content" width="100%" height="100%" viewBox="-1 -1 102 102">
+      <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98" />
+    </svg>
+  </div>
+
+  <script type="module">
+    /**
+     * 博客应用入口文件
+     * @description 模块化架构的协调入口
+     */
+
+    // ==================== 模块导入 ====================
+    import { initI18n, setLang, getCurrentLang } from './i18n.js';
+    import {
+      initThemeToggle,
+      initScrollbars,
+      initGoToTopButton,
+      initConfirmDialog,
+      initWindowControls,
+      initSidebarProximity,
+      initSidebarToggle,
+      renderSidebar,
+      renderTagCloud,
+      initScrollSpy,
+      initGlobalTooltip,
+      initContextMenu
+    } from './ui-components.js';
+
+    import { initFloatingToolbar } from './text-editor.js';
+    import { initCanvasControls, initSelectionBox, getSelectedBlocks, clearSelection } from './canvas.js';
+    import { initVideoOptimization, observeVideo, unobserveVideo } from './media.js';
+    import { reflowFolderContent, addFolderBlock } from './folder.js';
+    import { makeDraggable, makeResizable, updateContainerHeight } from './drag-resize.js';
+    import { invoke, convertFileSrc, convertToLocalPath, measureMedia } from './utils.js';
+    import { renderBlock, addBlock, scheduleSave, calcBlockPosition, scrollToNewBlock } from './blocks.js';
+    import {
+      initPostsModule,
+      initPostVirtualization,
+      loadPosts,
+      createNewPost,
+      mapFolderToPost,
+      confirmDeletePost,
+      savePost,
+      getAllPosts
+    } from './posts.js';
+
+    // ==================== 全局状态 ====================
+    window.isGlobalDragging = false;
+
+    // ==================== 帖子模块初始化 ====================
+    initPostsModule({
+      renderBlock: (container, blockData, card) => renderBlock(container, blockData, card, savePost),
+      updateContainerHeight,
+      reflowFolderContent,
+      renderSidebar,
+      renderTagCloud,
+      addBlock: (container, type, content, card) => addBlock(container, type, content, card, null, savePost),
+      observeVideo,
+      unobserveVideo,
+      // 💡 移入核心操作回调：统一发往该帖子的空白处 (null 为默认最底部)
+      onAddBlock: (type, flow, card) => {
+        type === 'h5'
+          ? addBlock(flow, 'h5', null, card, null, savePost)
+          : addBlock(flow, type, '', card, null, savePost);
+      },
+      onUpload: async (flow, card) => {
+        try {
+          const paths = await invoke("upload_media");
+          if (paths?.length) {
+            if (paths.length === 1) await addSmartBlock(flow, paths[0], card, null);
+            else await handleAddFolderBlock(flow, paths, card, null);
+          }
+        } catch (e) { console.error(e); }
+      },
+      onAddSmartBlock: async (flow, url, card) => {
+        await addSmartBlockFromUrl(flow, url, card, null);
+      },
+      onMapFolder: (card) => mapFolderToPost(card, handleAddFolderBlock)
+    });
+
+    // ==================== 右键菜单处理器 ====================
+    const contextMenuHandlers = {
+      onAddBlock: (type, flow, card, insertPos) => {
+        type === 'h5'
+          ? addBlock(flow, 'h5', null, card, insertPos, savePost)
+          : addBlock(flow, type, '', card, insertPos, savePost);
+      },
+      onUpload: async (flow, card, insertPos) => {
+        try {
+          const paths = await invoke("upload_media");
+          if (paths?.length) {
+            if (paths.length === 1) await addSmartBlock(flow, paths[0], card, insertPos);
+            else await handleAddFolderBlock(flow, paths, card, insertPos);
+          }
+        } catch (e) { console.error(e); }
+      },
+      onAddSmartBlock: async (flow, url, card, insertPos) => {
+        await addSmartBlockFromUrl(flow, url, card, insertPos);
+      },
+      onDelete: (card, e) => confirmDeletePost(card, e),
+      onMapFolder: (card) => mapFolderToPost(card, handleAddFolderBlock)
+    };
+
+    // ==================== 辅助函数 ====================
+
+    /**
+     * 智能添加块（根据文件类型自动判断）
+     */
+    async function addSmartBlock(container, filePath, card, insertPos) {
+      const ext = filePath.split('.').pop().toLowerCase();
+      const imgs = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'];
+      const videos = ['mp4', 'webm', 'mov', 'avi'];
+
+      if (imgs.includes(ext) || videos.includes(ext)) {
+        const type = imgs.includes(ext) ? 'img' : 'video';
+        try {
+          const src = convertFileSrc(filePath);
+          const size = await measureMedia(src, type);
+          const blockData = { type, src: filePath, w: size.w, h: size.h, isNew: true };
+
+          // 按比例缩放
+          const MAX_W = 500, MAX_H = 600;
+          if (size.w > MAX_W || size.h > MAX_H) {
+            const ratio = Math.min(MAX_W / size.w, MAX_H / size.h);
+            blockData.w = Math.round(size.w * ratio);
+            blockData.h = Math.round(size.h * ratio);
+          }
+
+          calcBlockPosition(container, blockData, insertPos);
+          renderBlock(container, blockData, card, savePost);
+          updateContainerHeight(container);
+          scheduleSave(card, savePost);
+          scrollToNewBlock(container);
+        } catch {
+          addBlock(container, type, { src: filePath }, card, insertPos, savePost);
+        }
+      } else {
+        addBlock(container, 'text', `[${filePath.split(/[/\\]/).pop()}](file://${filePath})`, card, insertPos, savePost);
+      }
+    }
+
+    /**
+     * 添加文件夹块的封装
+     */
+    async function handleAddFolderBlock(container, files, card, insertPos, width = null) {
+      await addFolderBlock(container, files, card, insertPos, width, {
+        renderBlock: (c, data, ca) => renderBlock(c, data, ca, savePost),
+        updateContainerHeight,
+        scrollToNewBlock,
+        calcBlockPosition,
+        scheduleSave: (c) => scheduleSave(c, savePost)
+      });
+    }
+
+    /**
+     * 根据URL智能添加块（图片/视频/嵌入/纯文本防御）
+     */
+    async function addSmartBlockFromUrl(container, url, card, insertPos) {
+      const trimmed = url.trim();
+      const lower = trimmed.toLowerCase();
+
+      let type, content;
+
+      // 1. 识别 iframe 嵌入代码
+      if (trimmed.startsWith('<iframe')) {
+        type = 'embed';
+        content = { html: trimmed };
+      }
+      // 2. 识别图片 URL
+      else if (/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i.test(lower)) {
+        type = 'img';
+      }
+      // 3. 识别视频 URL
+      else if (/\.(mp4|webm|mov|mkv)(\?.*)?$/i.test(lower)) {
+        type = 'video';
+      }
+      // 4. 识别特定视频网站
+      else if (lower.includes('youtube.com') || lower.includes('youtu.be') ||
+        lower.includes('bilibili.com') || lower.includes('vimeo.com')) {
+        type = 'embed';
+        // 自动补全 http 以防万一
+        const finalUrl = lower.startsWith('http') ? trimmed : `https://${trimmed}`;
+        content = { html: `<iframe src="${finalUrl}" style="width:100%;height:100%;border:none" allowfullscreen></iframe>` };
+      }
+      // 💡 5. 核心修复：普通链接 vs 纯文本的终极判决
+      else {
+        // 简单正则：判断是否长得像网址 (包含 . 且没有空格) 或带有协议头
+        const isUrl = /^https?:\/\//.test(lower) || (/^[^\s]+\.[a-z]{2,}(\/.*)?$/i.test(trimmed));
+
+        if (isUrl) {
+          // 是网址：强制补全 https:// 协议，彻底杜绝“套娃”加载本地路径
+          const finalUrl = lower.startsWith('http') ? trimmed : `https://${trimmed}`;
+          type = 'embed';
+          content = { html: `<iframe src="${finalUrl}" style="width:100%;height:100%;border:none" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>` };
+        } else {
+          // 只是随便输入的文字：不生成内嵌网页，直接降级为【普通文本块】！
+          type = 'text';
+          content = trimmed;
+        }
+      }
+
+      // 计算尺寸
+      let w = 400, h = 300;
+      if (type === 'text') {
+        w = 300; h = 200; // 文本块的默认大小
+      } else if (type === 'img' || type === 'video') {
+        try {
+          const size = await measureMedia(trimmed, type);
+          w = size.w;
+          h = size.h;
+          // 按比例缩放
+          const MAX_W = 500, MAX_H = 600;
+          if (w > MAX_W || h > MAX_H) {
+            const ratio = Math.min(MAX_W / w, MAX_H / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+        } catch {
+          w = 300; h = 200;
+        }
+      }
+
+      const blockData = { type, w, h, isNew: true };
+
+      if (type === 'embed') {
+        blockData.content = content;
+      } else if (type === 'text') {
+        blockData.content = content; // 传入普通文字
+      } else {
+        blockData.src = trimmed;
+      }
+
+      calcBlockPosition(container, blockData, insertPos);
+      renderBlock(container, blockData, card, savePost);
+      updateContainerHeight(container);
+      scheduleSave(card, savePost);
+      scrollToNewBlock(container);
+    }
+
+    // ==================== 应用初始化 ====================
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 0. 初始化多语言
+      initI18n();
+
+      // 1. 基础 UI 初始化
+      initThemeToggle();
+      initScrollbars();
+      initSidebarProximity();
+      initSidebarToggle();
+      initGoToTopButton();
+      initConfirmDialog();
+      initWindowControls();
+      initScrollSpy();
+      initGlobalTooltip();
+      initContextMenu(contextMenuHandlers);
+
+      // 2. 帖子虚拟化
+      initPostVirtualization();
+
+      // 3. 浮动菜单已弃用 (删除对应初始化)
+
+      // 3. 浮动菜单
+      // initFloatMenu(floatMenuHandlers);
+
+      // 4. 富文本工具栏
+      initFloatingToolbar();
+
+      // 5. 视频优化
+      initVideoOptimization();
+
+      // 6. 画布控制（缩放、平移、框选）
+      initCanvasControls({
+        reflowFolderContent,
+        updateContainerHeight
+      });
+
+      initSelectionBox({
+        invoke,
+        convertToLocalPath,
+        reflowFolderContent,
+        updateContainerHeight,
+        scheduleSave: (card) => scheduleSave(card, savePost)
+      });
+
+      // 7. 头部按钮事件
+      document.getElementById('btn-create-new')?.addEventListener('click', createNewPost);
+
+      // 8. 搜索功能
+      const searchInput = document.getElementById('search-input');
+      searchInput?.addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase().trim();
+        const posts = getAllPosts();
+
+        // 过滤帖子
+        const filtered = q
+          ? posts.filter(p => {
+            const story = p.story || '';
+            const tags = p.tags || '';
+            return story.toLowerCase().includes(q) || tags.toLowerCase().includes(q);
+          })
+          : posts;
+
+        // 更新侧边栏
+        renderSidebar(filtered);
+
+        // 过滤主区域显示
+        const container = document.getElementById('feed-container');
+        if (container) {
+          const filteredIds = new Set(filtered.map(p => String(p.id)));
+          container.querySelectorAll('.post').forEach(postEl => {
+            const isMatch = filteredIds.has(postEl.dataset.id);
+            postEl.style.display = isMatch ? '' : 'none';
+          });
+        }
+      });
+
+      // 9. 快捷键
+      document.addEventListener('keydown', (e) => {
+        // Ctrl + N: 新建帖子
+        if (e.ctrlKey && e.key === 'n') {
+          e.preventDefault();
+          createNewPost();
+        }
+      });
+
+      // 10. 加载帖子数据
+      await loadPosts();
+
+      // 确保初始化后滚动条在顶部
+      const scrollContainer = document.querySelector('.main-scroll');
+      if (scrollContainer) scrollContainer.scrollTop = 0;
+
+      // 11. 显示窗口（在配置中设为 visible: false，初始化后再显示以避免闪烁）
+      const tauri = window.__TAURI__;
+      if (tauri && tauri.window) {
+        const appWindow = tauri.window.getCurrentWindow();
+        await appWindow.show();
+      }
+
+      console.log('✨ 博客应用初始化完成');
+    });
+
+    // ==================== 全局导出（供调试） ====================
+    if (import.meta.env?.DEV) {
+      window.__DEBUG__ = {
+        getAllPosts,
+        getSelectedBlocks,
+        clearSelection
+      };
+    }
+
+    // 禁用右键菜单
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
+
+    // 禁用 F12 和 Ctrl+Shift+I 快捷键
+    document.addEventListener('keydown', (e) => {
+      // F12
+      if (e.key === 'F12' || e.keyCode === 123) {
+        e.preventDefault();
+      }
+      // Ctrl + Shift + I
+      if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
+        e.preventDefault();
+      }
+    });
+
+  </script>
+
+  <div id="trash-modal" class="trash-modal">
+    <div class="trash-modal-content">
+      <div class="trash-header">
+        <h2 data-i18n="trash_title">回收站</h2>
+        <div class="trash-actions">
+          <button id="btn-empty-trash" class="danger" data-i18n="empty_trash">清空回收站</button>
+          <button id="btn-close-trash" data-i18n="close_title">关闭</button>
+        </div>
+      </div>
+      <div class="trash-tabs">
+        <div class="trash-tab active" data-type="posts" data-i18n="trash_deleted_posts">已删帖子</div>
+        <div class="trash-tab" data-type="blocks" data-i18n="trash_deleted_blocks">已删块</div>
+      </div>
+      <div class="trash-list" id="trash-list"></div>
+    </div>
+  </div>
+
+</body>
+
+</html>
